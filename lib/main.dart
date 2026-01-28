@@ -12,6 +12,7 @@ import 'app/modules/checkout/checkout_provider.dart';
 import 'app/modules/orders/order_provider.dart';
 import 'app/modules/profile/profile_provider.dart';
 import 'app/modules/admin/admin_provider.dart';
+import 'app/modules/favorites/favorites_provider.dart';
 
 import 'app/modules/auth/auth_view.dart';
 import 'app/modules/auth/splash_view.dart';
@@ -20,6 +21,7 @@ import 'app/modules/cart/cart_view.dart';
 import 'app/modules/checkout/checkout_view.dart';
 import 'app/modules/orders/order_view.dart';
 import 'app/modules/profile/profile_view.dart';
+import 'app/modules/favorites/favorites_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +47,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
+        ChangeNotifierProvider(create: (_) => FavoritesProvider()),
       ],
       child: const MobileApp(),
     ),
@@ -68,6 +71,7 @@ class MobileApp extends StatelessWidget {
         '/checkout': (context) => const CheckoutView(),
         '/orders': (context) => const OrderView(),
         '/profile': (context) => const ProfileView(),
+        '/favorites': (context) => const FavoritesView(),
       },
     );
   }

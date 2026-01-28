@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'home_provider.dart';
 import '../cart/cart_provider.dart';
+import '../favorites/favorites_provider.dart';
 import 'product_detail_view.dart';
 import '../../data/app_colors.dart';
 import '../../global_widgets/glass_container.dart';
@@ -230,57 +231,90 @@ class HomeView extends StatelessWidget {
   }
 
   Widget _buildProductCard(BuildContext context, product) {
-    return GlassContainer(
-      padding: const EdgeInsets.all(12),
-      borderRadius: 20,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Center(
-              child: Hero(
-                tag: 'product_${product.id}',
-                child: product.imageUrl.isNotEmpty
-                    ? Image.network(product.imageUrl, fit: BoxFit.contain)
-                    : const Icon(Icons.phone_iphone, size: 80, color: Colors.white24),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            product.brand.isNotEmpty ? product.brand : "Premium",
-            style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            product.name,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Consumer<FavoritesProvider>(
+      builder: (context, favoritesProvider, _) {
+        final isFavorite = favoritesProvider.isFavorite(product);
+        return GlassContainer(
+          padding: const EdgeInsets.all(12),
+          borderRadius: 20,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "\$${product.price.toStringAsFixed(0)}",
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18),
-              ),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(8),
+              Expanded(
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Hero(
+                        tag: 'product_${product.id}',
+                        child: product.imageUrl.isNotEmpty
+                            ? Image.network(product.imageUrl, fit: BoxFit.contain)
+                            : const Icon(Icons.phone_iphone, size: 80, color: Colors.white24),
+                      ),
+                    ),
+                    Positioned(
+                      top: 5,
+                      right: 5,
+                      child: GestureDetector(
+                        onTap: () => favoritesProvider.toggleFavorite(product),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            color: isFavorite ? Colors.redAccent : Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.add, color: Colors.white, size: 20),
-              )
+              ),
+              const SizedBox(height: 10),
+              Text(
+                product.brand.isNotEmpty ? product.brand : "Premium",
+                style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                product.name,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "\$${product.price.toStringAsFixed(0)}",
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      context.read<CartProvider>().addToCart(product, context);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.add, color: Colors.white, size: 20),
+                    ),
+                  )
+                ],
+              ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

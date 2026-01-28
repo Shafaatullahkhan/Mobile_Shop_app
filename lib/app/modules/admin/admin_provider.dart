@@ -36,8 +36,11 @@ class AdminProvider extends ChangeNotifier {
     });
 
     _orderSub = _databaseService.getAllOrders().listen((orderList) {
+      debugPrint("AdminProvider: Fetched ${orderList.length} orders");
       _orders = orderList;
       notifyListeners();
+    }, onError: (e) {
+      debugPrint("AdminProvider: Error fetching orders: $e");
     });
 
     _userSub = _databaseService.getUsers().listen((userList) {

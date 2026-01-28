@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,7 +7,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
   
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -110,13 +113,28 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
       _setLoading(true);
+      
+      // First check if Google Sign-In is available
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         _setLoading(false);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Google Sign-In was cancelled")),
+          );
+        }
         return;
       }
 
+      debugPrint("Google user signed in: ${googleUser.email}");
+
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      debugPrint("Got Google auth: accessToken=${googleAuth.accessToken != null}, idToken=${googleAuth.idToken != null}");
+      
+      if (googleAuth.idToken == null) {
+        throw Exception("Failed to get Google ID token");
+      }
+
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -126,25 +144,72 @@ class AuthProvider extends ChangeNotifier {
       final user = userCredential.user;
 
       if (user != null) {
+        debugPrint("Firebase auth successful for user: ${user.email}");
+        
         // Save user to Firestore if new
         await _saveUserToFirestore(user, googleUser.displayName ?? "");
 
         if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Welcome ${user.displayName ?? user.email}!")),
+          );
           Navigator.of(context).pushReplacementNamed('/home');
         }
       }
     } on FirebaseAuthException catch (e) {
       debugPrint("Firebase Auth Error: ${e.code} - ${e.message}");
+      String errorMessage = "Authentication failed";
+      
+      switch (e.code) {
+        case 'invalid-credential':
+          errorMessage = "Invalid Google credentials. Please try again.";
+          break;
+        case 'user-disabled':
+          errorMessage = "This account has been disabled.";
+          break;
+        case 'user-not-found':
+          errorMessage = "No account found for this email.";
+          break;
+        case 'wrong-password':
+          errorMessage = "Incorrect password.";
+          break;
+        case 'invalid-email':
+          errorMessage = "Invalid email address.";
+          break;
+        case 'network-request-failed':
+          errorMessage = "Network error. Please check your internet connection.";
+          break;
+        default:
+          errorMessage = e.message ?? "Authentication failed";
+      }
+      
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Auth Error: ${e.message ?? 'Unknown error'}")),
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    } on PlatformException catch (e) {
+      debugPrint("Platform Exception: ${e.code} - ${e.message}");
+      String errorMessage = "Google Sign-In failed";
+      
+      if (e.code == 'sign_in_failed') {
+        errorMessage = "Google Sign-In failed. Please check your internet connection and Google Play Services.";
+      } else if (e.code == 'network_error') {
+        errorMessage = "Network error. Please check your internet connection.";
+      } else {
+        errorMessage = e.message ?? "Google Sign-In failed";
+      }
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
         );
       }
     } catch (e) {
       debugPrint("Google Sign-In Error: $e");
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Sign-In failed. Please check your internet and Google settings.")),
+          SnackBar(content: Text("Sign-In failed: ${e.toString()}")),
         );
       }
     } finally {

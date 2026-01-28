@@ -257,6 +257,7 @@ class _AdminViewState extends State<AdminView> with SingleTickerProviderStateMix
   Widget _buildOrdersTab() {
     return Consumer<AdminProvider>(
       builder: (context, adminProvider, _) {
+        debugPrint("AdminView: Building orders tab with ${adminProvider.orders.length} orders");
         if (adminProvider.orders.isEmpty) {
           return const Center(child: Text("No orders yet", style: TextStyle(color: Colors.white38)));
         }

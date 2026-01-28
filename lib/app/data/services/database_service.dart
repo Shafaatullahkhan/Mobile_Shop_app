@@ -62,9 +62,19 @@ class DatabaseService {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
+      debugPrint("DatabaseService: Processing ${snapshot.docs.length} order documents");
       return snapshot.docs.map((doc) {
-        return model.Order.fromMap(doc.id, doc.data());
+        try {
+          return model.Order.fromMap(doc.id, doc.data());
+        } catch (e) {
+          debugPrint("Error parsing order ${doc.id}: $e");
+          debugPrint("Order data: ${doc.data()}");
+          rethrow;
+        }
       }).toList();
+    }).handleError((error) {
+      debugPrint("DatabaseService: Error in getAllOrders stream: $error");
+      return <model.Order>[];
     });
   }
 

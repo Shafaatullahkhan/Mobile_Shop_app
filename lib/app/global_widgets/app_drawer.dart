@@ -42,6 +42,12 @@ class AppDrawer extends StatelessWidget {
                 ),
                 _buildDrawerItem(
                   context,
+                  icon: Icons.favorite_outline,
+                  title: "My Favorites",
+                  onTap: () => Navigator.pushNamed(context, '/favorites'),
+                ),
+                _buildDrawerItem(
+                  context,
                   icon: Icons.shopping_cart_outlined,
                   title: "My Cart",
                   onTap: () => Navigator.pushNamed(context, '/cart'),

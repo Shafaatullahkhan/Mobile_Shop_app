@@ -39,10 +39,14 @@ class Order {
       id: id,
       userId: map['userId'] ?? '',
       userName: map['userName'],
-      items: List<Product>.from(map['items']?.map((x) => Product.fromMap(x['id'] ?? '', x)) ?? []),
-      totalAmount: (map['totalAmount'] ?? 0.0).toDouble(),
+      items: List<Product>.from(map['items']?.map((x) => Product.fromMap(x, x['id'] ?? '')) ?? []),
+      totalAmount: (map['totalAmount'] ?? map['totalPrice'] ?? 0.0).toDouble(),
       status: map['status'] ?? 'pending',
-      timestamp: (map['timestamp'] as Timestamp).toDate(),
+      timestamp: map['timestamp'] != null 
+          ? (map['timestamp'] as Timestamp).toDate()
+          : (map['createdAt'] != null 
+              ? (map['createdAt'] as Timestamp).toDate()
+              : DateTime.now()),
       expectedDeliveryTime: map['expectedDeliveryTime'],
     );
   }

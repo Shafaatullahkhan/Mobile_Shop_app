@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../cart/cart_provider.dart';
+import '../favorites/favorites_provider.dart';
 import '../../data/models/product_model.dart';
 import '../../data/app_colors.dart';
 import '../../global_widgets/glass_container.dart';
@@ -48,12 +49,24 @@ class _ProductDetailViewState extends State<ProductDetailView> with SingleTicker
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: GlassContainer(
-              borderRadius: 12,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                child: Icon(Icons.favorite_border, color: Colors.white, size: 24),
-              ),
+            child: Consumer<FavoritesProvider>(
+              builder: (context, favoritesProvider, _) {
+                final isFavorite = favoritesProvider.isFavorite(widget.product);
+                return GestureDetector(
+                  onTap: () => favoritesProvider.toggleFavorite(widget.product),
+                  child: GlassContainer(
+                    borderRadius: 12,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.redAccent : Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
