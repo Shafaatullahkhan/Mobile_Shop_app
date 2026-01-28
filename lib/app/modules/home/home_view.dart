@@ -7,6 +7,7 @@ import 'product_detail_view.dart';
 import '../../data/app_colors.dart';
 import '../../global_widgets/glass_container.dart';
 import '../../global_widgets/app_drawer.dart';
+import '../../global_widgets/offline_status_indicator.dart';
 import '../cart/cart_view.dart';
 
 class HomeView extends StatelessWidget {
@@ -62,6 +63,10 @@ class HomeView extends StatelessWidget {
       ),
       title: const SizedBox.shrink(),
       actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 10),
+          child: const OfflineStatusIndicator(),
+        ),
         Padding(
           padding: const EdgeInsets.only(right: 20),
           child: IconButton(

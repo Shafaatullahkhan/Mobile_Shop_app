@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../data/models/product_model.dart';
-import '../../data/services/database_service.dart';
+import '../../data/repositories/product_repository.dart';
+import '../../data/local/models/product_local.dart';
 
 class HomeProvider extends ChangeNotifier {
-  final DatabaseService _databaseService = DatabaseService();
+  final ProductRepository _productRepository;
   
   List<Product> _allProducts = [];
   List<Product> _products = [];
@@ -15,24 +17,53 @@ class HomeProvider extends ChangeNotifier {
   String _selectedCategory = 'All';
   String get selectedCategory => _selectedCategory;
 
-  HomeProvider() {
+  StreamSubscription? _productsSubscription;
+
+  HomeProvider(this._productRepository) {
     _fetchProducts();
   }
 
   void _fetchProducts() {
     _isLoading = true;
-    _databaseService.products.listen((productList) {
-      if (productList.isEmpty) {
-        // Add mock data if Firestore is empty
+    notifyListeners();
+
+    _productsSubscription = _productRepository.getAllProducts().listen(
+      (productList) {
+        if (productList.isEmpty) {
+          // Add mock data if no products available
+          _products = _getMockTechProducts();
+          _allProducts = _products;
+        } else {
+          // Convert local products to domain models
+          _allProducts = productList.map(_convertToProduct).toList();
+          _products = _allProducts;
+        }
+        _isLoading = false;
+        notifyListeners();
+      },
+      onError: (error) {
+        debugPrint('Error fetching products: $error');
+        // Fallback to mock data
         _products = _getMockTechProducts();
         _allProducts = _products;
-      } else {
-        _allProducts = productList;
-        _products = productList;
-      }
-      _isLoading = false;
-      notifyListeners();
-    });
+        _isLoading = false;
+        notifyListeners();
+      },
+    );
+  }
+
+  Product _convertToProduct(ProductLocal localProduct) {
+    return Product(
+      id: localProduct.id,
+      name: localProduct.name,
+      description: localProduct.description,
+      price: localProduct.price,
+      stock: localProduct.stock,
+      imageUrl: localProduct.imageUrl,
+      category: localProduct.category,
+      brand: localProduct.brand,
+      specifications: localProduct.specifications,
+    );
   }
 
   List<Product> _getMockTechProducts() {
@@ -106,5 +137,11 @@ class HomeProvider extends ChangeNotifier {
           .toList();
     }
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _productsSubscription?.cancel();
+    super.dispose();
   }
 }
